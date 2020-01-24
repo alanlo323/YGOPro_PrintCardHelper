@@ -7,17 +7,11 @@ using iText.Layout.Properties;
 using iText.Layout.Renderer;
 using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace YGOPro_PrintCardHelper
@@ -51,7 +45,7 @@ namespace YGOPro_PrintCardHelper
                     {
                         if (new Regex(@"^\d{1,}$").IsMatch(line))
                         {
-                            richTextBox1.Text += line + "\n";
+                            richTextBox1.Text += "Processing card number: " + line + "\n";
                             FileInfo fileProps = new FileInfo(new FileInfo(path).DirectoryName);
                             while (!fileProps.Name.Equals("deck"))
                             {
@@ -186,6 +180,7 @@ namespace YGOPro_PrintCardHelper
 
         private void richTextBox1_TextChanged(object sender, EventArgs e)
         {
+            richTextBox1.SelectionStart = richTextBox1.Text.Length;
             richTextBox1.ScrollToCaret();
         }
     }
