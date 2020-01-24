@@ -13,6 +13,9 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using Xceed.Document.NET;
+using Xceed.Words.NET;
+using Image = Xceed.Document.NET.Image;
 
 namespace YGOPro_PrintCardHelper
 {
@@ -21,8 +24,6 @@ namespace YGOPro_PrintCardHelper
         public frmHelper()
         {
             InitializeComponent();
-            this.AllowDrop = true;
-            this.DragEnter += new DragEventHandler(Form1_DragEnter);
             richTextBox1.AllowDrop = true;
             richTextBox1.DragEnter += new DragEventHandler(Form1_DragEnter);
             richTextBox1.DragDrop += new DragEventHandler(Form1_DragDrop);
@@ -36,53 +37,119 @@ namespace YGOPro_PrintCardHelper
             string[] paths = (string[])e.Data.GetData(DataFormats.FileDrop);
             foreach (string path in paths)
             {
-                ArrayList picPaths = new ArrayList();
-                if (File.Exists(path))
+                try
                 {
-                    richTextBox1.Text += path + "\n";
-                    string[] lines = File.ReadAllLines(path);
-                    foreach (string line in lines)
+                    ArrayList picPaths = new ArrayList();
+                    if (File.Exists(path))
                     {
-                        if (new Regex(@"^\d{1,}$").IsMatch(line))
+                        richTextBox1.Text += path + "\n";
+                        string[] lines = File.ReadAllLines(path);
+                        foreach (string line in lines)
                         {
-                            richTextBox1.Text += "Processing card number: " + line + "\n";
-                            FileInfo fileProps = new FileInfo(new FileInfo(path).DirectoryName);
-                            while (!fileProps.Name.Equals("deck"))
+                            if (new Regex(@"^\d{1,}$").IsMatch(line))
                             {
+                                FileInfo fileProps = new FileInfo(new FileInfo(path).DirectoryName);
+                                while (!fileProps.Name.Equals("deck"))
+                                {
+                                    fileProps = new FileInfo(fileProps.Directory.FullName);
+                                }
                                 fileProps = new FileInfo(fileProps.Directory.FullName);
+                                picPaths.Add(fileProps.FullName + "\\pics\\" + line + ".jpg");
                             }
-                            fileProps = new FileInfo(fileProps.Directory.FullName);
-                            picPaths.Add(fileProps.FullName + "\\pics\\" + line + ".jpg");
                         }
                     }
+                    FileInfo file = new FileInfo(path);
+                    string outputPath = file.FullName.Replace(file.Extension, "") + ".doc";
+                    file = new FileInfo(outputPath);
+                    file.Directory.Create();
+                    ManipulateWord(file.FullName, (string[])picPaths.ToArray(typeof(string)));
+                    richTextBox1.Text += "Generated print file: " + outputPath + "\n";
                 }
-                FileInfo file = new FileInfo(path);
-                string pdfPath = file.FullName.Replace(file.Extension, "") + ".pdf";
-                richTextBox1.Text += pdfPath + "\n";
-                file = new FileInfo(pdfPath);
-                file.Directory.Create();
-                ManipulatePdf(file.FullName, (string[])picPaths.ToArray(typeof(string)));
+                catch (Exception ex)
+                {
+                    richTextBox1.Text += ex.Message + "\n";
+                }
             }
+        }
+        private void ManipulateWord(string dest, string[] paths)
+        {
+            var doc = DocX.Create(dest);
+            doc.MarginLeft = 47;
+            doc.MarginRight = 47;
+            doc.MarginTop = 56;
+            doc.MarginBottom = 56;
+            Xceed.Document.NET.Paragraph par = doc.InsertParagraph();
+            foreach (string _path in paths)
+            {
+                try
+                {
+                    FileInfo fileInfo = new FileInfo(_path);
+                    richTextBox1.Text += "Processing card number: " + fileInfo.Name + "\n";
+                    ImageData imageData = ImageDataFactory.Create(_path);
+                    int width = (int)CentimeterToPixel(5.9, imageData.GetDpiX());
+                    int height = (int)CentimeterToPixel(8.6, imageData.GetDpiY());
+
+                    string tempPath = Path.GetTempPath() + fileInfo.Name;
+                    Image img = doc.AddImage(_path);
+                    Picture p = img.CreatePicture();
+                    //p.Width = p.Width;
+                    //p.Height = p.Height;
+                    double _r = 37.788578371810449574726609963548;
+                    p.Width = (int)(5.9 * _r);
+                    p.Height = (int)(8.6 * _r);
+                    //Create a new paragraph  
+                    par.AppendPicture(p);
+
+                }
+                catch (Exception ex)
+                {
+                    richTextBox1.Text += ex.Message + "\n";
+                }
+            }
+            doc.Save();
         }
         private void ManipulatePdf(string dest, string[] paths)
         {
             PdfDocument pdfDoc = new PdfDocument(new PdfWriter(dest));
-            Document doc = new Document(pdfDoc);
+            iText.Layout.Document doc = new iText.Layout.Document(pdfDoc);
 
-            Table table = new Table(3);
+            iText.Layout.Element.Table table = new iText.Layout.Element.Table(3);
+            table.SetMargins(0, 0, 0, 0);
+            table.SetPaddings(0, 0, 0, 0);
 
             foreach (string _path in paths)
             {
                 try
                 {
+                    FileInfo fileInfo = new FileInfo(_path);
+                    richTextBox1.Text += "Processing card number: " + fileInfo.Name + "\n";
                     ImageData imageData = ImageDataFactory.Create(_path);
                     int width = (int)CentimeterToPixel(5.9, imageData.GetDpiX());
                     int height = (int)CentimeterToPixel(8.6, imageData.GetDpiY());
                     System.Drawing.Image image = System.Drawing.Image.FromFile(_path);
                     System.Drawing.Image resizedImage = ResizeImage(image, width, height);
-                    string tempPath = Path.GetTempPath() + "\\" + new FileInfo(_path).Name;
+
+                    string tempPath = Path.GetTempPath() + fileInfo.Name;
                     resizedImage.Save(tempPath, ImageFormat.Jpeg);
-                    table.AddCell(CreateImageCell(tempPath));
+                    //using (System.Drawing.Image bmpInput = System.Drawing.Image.FromFile(tempPath))
+                    //{
+                    //    using (Bitmap bmpOutput = new Bitmap(bmpInput))
+                    //    {
+                    //        ImageCodecInfo encoder = GetEncoder(ImageFormat.Png);
+                    //        Encoder myEncoder = Encoder.Quality;
+
+                    //        var myEncoderParameters = new EncoderParameters(1);
+                    //        var myEncoderParameter = new EncoderParameter(myEncoder, 100L);
+                    //        myEncoderParameters.Param[0] = myEncoderParameter;
+
+                    //        bmpOutput.SetResolution(207.0f, 207.0f); // Change to any dpi
+                    //        bmpOutput.Save(tempPath, encoder, myEncoderParameters);
+                    //    }
+                    //}
+                    iText.Layout.Element.Cell cell = CreateImageCell(tempPath);
+                    cell.SetMargins(0, 0, 0, 0);
+                    cell.SetPaddings(0, 0, 0, 0);
+                    table.AddCell(cell);
                 }
                 catch (Exception ex)
                 {
@@ -93,6 +160,18 @@ namespace YGOPro_PrintCardHelper
             doc.Add(table);
 
             doc.Close();
+        }
+        private ImageCodecInfo GetEncoder(ImageFormat format)
+        {
+            ImageCodecInfo[] codecs = ImageCodecInfo.GetImageDecoders();
+            foreach (ImageCodecInfo codec in codecs)
+            {
+                if (codec.FormatID == format.Guid)
+                {
+                    return codec;
+                }
+            }
+            return null;
         }
         /// <summary>
         /// Resize the image to the specified width and height.
@@ -135,20 +214,20 @@ namespace YGOPro_PrintCardHelper
             double pixel = Centimeter * dpi / 2.54d;
             return (float)pixel;
         }
-        private static Cell CreateImageCell(string path)
+        private static iText.Layout.Element.Cell CreateImageCell(string path)
         {
             ImageData imageData = ImageDataFactory.Create(path);
             iText.Layout.Element.Image img = new iText.Layout.Element.Image(imageData);
             img.SetWidth(imageData.GetWidth());
-            Cell cell = new Cell().Add(img);
-            cell.SetBorder(Border.NO_BORDER);
+            iText.Layout.Element.Cell cell = new iText.Layout.Element.Cell().Add(img);
+            cell.SetBorder(iText.Layout.Borders.Border.NO_BORDER);
             return cell;
         }
         private class OverlappingImageTableRenderer : TableRenderer
         {
             private ImageData image;
 
-            public OverlappingImageTableRenderer(Table modelElement, ImageData img)
+            public OverlappingImageTableRenderer(iText.Layout.Element.Table modelElement, ImageData img)
                 : base(modelElement)
             {
                 image = img;
@@ -169,7 +248,7 @@ namespace YGOPro_PrintCardHelper
             // renderer will be created
             public override IRenderer GetNextRenderer()
             {
-                return new OverlappingImageTableRenderer((Table)modelElement, image);
+                return new OverlappingImageTableRenderer((iText.Layout.Element.Table)modelElement, image);
             }
         }
 

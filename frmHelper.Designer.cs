@@ -52,7 +52,6 @@
             this.Name = "frmHelper";
             this.Text = "YGOPro Print Deck Helper";
             this.Load += new System.EventHandler(this.frmHelper_Load);
-            this.DragDrop += new System.Windows.Forms.DragEventHandler(this.Form1_DragDrop);
             this.ResumeLayout(false);
 
         }
