@@ -69,7 +69,7 @@ namespace YGOPro_PrintCardHelper
             PdfDocument pdfDoc = new PdfDocument(new PdfWriter(dest));
             Document doc = new Document(pdfDoc);
 
-            Table table = new Table(UnitValue.CreatePercentArray(new float[] { 1, 2 }));
+            Table table = new Table(3);
 
             foreach (string _path in paths)
             {
