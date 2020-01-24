@@ -33,21 +33,25 @@
             // 
             // richTextBox1
             // 
+            this.richTextBox1.AutoWordSelection = true;
             this.richTextBox1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.richTextBox1.Location = new System.Drawing.Point(0, 0);
             this.richTextBox1.Name = "richTextBox1";
-            this.richTextBox1.Size = new System.Drawing.Size(800, 328);
+            this.richTextBox1.ReadOnly = true;
+            this.richTextBox1.Size = new System.Drawing.Size(800, 461);
             this.richTextBox1.TabIndex = 0;
             this.richTextBox1.Text = "";
+            this.richTextBox1.TextChanged += new System.EventHandler(this.richTextBox1_TextChanged);
             // 
             // frmHelper
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 328);
+            this.ClientSize = new System.Drawing.Size(800, 461);
             this.Controls.Add(this.richTextBox1);
             this.Name = "frmHelper";
             this.Text = "YGOPro Print Deck Helper";
+            this.Load += new System.EventHandler(this.frmHelper_Load);
             this.DragDrop += new System.Windows.Forms.DragEventHandler(this.Form1_DragDrop);
             this.ResumeLayout(false);
 

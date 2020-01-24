@@ -79,14 +79,21 @@ namespace YGOPro_PrintCardHelper
 
             foreach (string _path in paths)
             {
-                ImageData imageData = ImageDataFactory.Create(_path);
-                int width = (int)CentimeterToPixel(5.9, imageData.GetDpiX());
-                int height = (int)CentimeterToPixel(8.6, imageData.GetDpiY());
-                System.Drawing.Image image = System.Drawing.Image.FromFile(_path);
-                System.Drawing.Image resizedImage = ResizeImage(image, width, height);
-                string tempPath = Path.GetTempPath() + "\\" + new FileInfo(_path).Name;
-                resizedImage.Save(tempPath, ImageFormat.Jpeg);
-                table.AddCell(CreateImageCell(tempPath));
+                try
+                {
+                    ImageData imageData = ImageDataFactory.Create(_path);
+                    int width = (int)CentimeterToPixel(5.9, imageData.GetDpiX());
+                    int height = (int)CentimeterToPixel(8.6, imageData.GetDpiY());
+                    System.Drawing.Image image = System.Drawing.Image.FromFile(_path);
+                    System.Drawing.Image resizedImage = ResizeImage(image, width, height);
+                    string tempPath = Path.GetTempPath() + "\\" + new FileInfo(_path).Name;
+                    resizedImage.Save(tempPath, ImageFormat.Jpeg);
+                    table.AddCell(CreateImageCell(tempPath));
+                }
+                catch (Exception ex)
+                {
+                    richTextBox1.Text += ex.Message + "\n";
+                }
             }
 
             doc.Add(table);
@@ -170,6 +177,16 @@ namespace YGOPro_PrintCardHelper
             {
                 return new OverlappingImageTableRenderer((Table)modelElement, image);
             }
+        }
+
+        private void frmHelper_Load(object sender, EventArgs e)
+        {
+            richTextBox1.Text += "Drap ydk file(s) here to generate pdf file(s)" + "\n";
+        }
+
+        private void richTextBox1_TextChanged(object sender, EventArgs e)
+        {
+            richTextBox1.ScrollToCaret();
         }
     }
 }
