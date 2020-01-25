@@ -84,7 +84,7 @@ namespace YGOPro_PrintCardHelper
                 try
                 {
                     FileInfo fileInfo = new FileInfo(_path);
-                    richTextBox1.Text += "Processing card number: " + fileInfo.Name + "\n";
+                    richTextBox1.Text += "Processing card number: " + fileInfo.Name.Replace(".jpg", "") + "... ";
                     ImageData imageData = ImageDataFactory.Create(_path);
                     int width = (int)CentimeterToPixel(5.9, imageData.GetDpiX());
                     int height = (int)CentimeterToPixel(8.6, imageData.GetDpiY());
@@ -99,11 +99,11 @@ namespace YGOPro_PrintCardHelper
                     p.Height = (int)(8.6 * _r);
                     //Create a new paragraph  
                     par.AppendPicture(p);
-
+                    richTextBox1.Text += "Success!" + "\n";
                 }
                 catch (Exception ex)
                 {
-                    richTextBox1.Text += ex.Message + "\n";
+                    richTextBox1.Text += ex.InnerException.Message + "\n";
                 }
             }
             doc.Save();
@@ -122,7 +122,7 @@ namespace YGOPro_PrintCardHelper
                 try
                 {
                     FileInfo fileInfo = new FileInfo(_path);
-                    richTextBox1.Text += "Processing card number: " + fileInfo.Name + "\n";
+                    richTextBox1.Text += "Processing card number: " + fileInfo.Name.Replace(".jpg", "") + "... ";
                     ImageData imageData = ImageDataFactory.Create(_path);
                     int width = (int)CentimeterToPixel(5.9, imageData.GetDpiX());
                     int height = (int)CentimeterToPixel(8.6, imageData.GetDpiY());
