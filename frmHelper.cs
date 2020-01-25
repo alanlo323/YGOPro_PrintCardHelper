@@ -254,7 +254,7 @@ namespace YGOPro_PrintCardHelper
 
         private void frmHelper_Load(object sender, EventArgs e)
         {
-            richTextBox1.Text += "Drap ydk file(s) here to generate pdf file(s)" + "\n";
+            richTextBox1.Text += "Drap .ydk file(s) here to generate .docx file(s)" + "\n";
         }
 
         private void richTextBox1_TextChanged(object sender, EventArgs e)
