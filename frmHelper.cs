@@ -1,11 +1,4 @@
-﻿using iText.IO.Image;
-using iText.Kernel.Pdf;
-using iText.Layout;
-using iText.Layout.Borders;
-using iText.Layout.Element;
-using iText.Layout.Properties;
-using iText.Layout.Renderer;
-using Microsoft.Office.Interop.Word;
+﻿using Microsoft.Office.Interop.Word;
 using System;
 using System.Collections;
 using System.Drawing;
@@ -81,103 +74,57 @@ namespace YGOPro_PrintCardHelper
             doc.MarginTop = 56;
             doc.MarginBottom = 56;
             Xceed.Document.NET.Paragraph par = doc.InsertParagraph();
+            int successedCard = 0;
             foreach (string _path in paths)
             {
                 try
                 {
                     FileInfo fileInfo = new FileInfo(_path);
                     richTextBox1.Text += "Processing card number: " + fileInfo.Name.Replace(".jpg", "") + "... ";
-                    ImageData imageData = ImageDataFactory.Create(_path);
-                    int width = (int)CentimeterToPixel(5.9, imageData.GetDpiX());
-                    int height = (int)CentimeterToPixel(8.6, imageData.GetDpiY());
 
                     string tempPath = Path.GetTempPath() + fileInfo.Name;
                     Image img = doc.AddImage(_path);
                     Picture p = img.CreatePicture();
-                    //p.Width = p.Width;
-                    //p.Height = p.Height;
                     double _r = 37.788578371810449574726609963548;
                     p.Width = (int)(5.9 * _r);
                     p.Height = (int)(8.6 * _r);
                     //Create a new paragraph  
                     par.AppendPicture(p);
+                    successedCard++;
                     richTextBox1.Text += "Success!" + "\n";
                 }
                 catch (Exception ex)
                 {
-                    richTextBox1.Text += ex.InnerException.Message + "\n";
+                    richTextBox1.Text += "Fail! " + ex.Message + "\n";
                 }
             }
-            doc.Save();
-            richTextBox1.Text += "Generated print file(.doc): " + dest + "\n";
-            convertWordToPdf(dest, dest.Replace(".doc", ".pdf"));
-        }
-        private void ManipulatePdf(string dest, string[] paths)
-        {
-            PdfDocument pdfDoc = new PdfDocument(new PdfWriter(dest));
-            iText.Layout.Document doc = new iText.Layout.Document(pdfDoc);
 
-            iText.Layout.Element.Table table = new iText.Layout.Element.Table(3);
-            table.SetMargins(0, 0, 0, 0);
-            table.SetPaddings(0, 0, 0, 0);
-
-            foreach (string _path in paths)
+            if (successedCard > 0)
             {
-                try
+                doc.Save();
+                richTextBox1.Text += "Generated print file(.doc): " + dest + "\n";
+                if (convertWordToPdf(dest, dest.Replace(".doc", ".pdf")))
                 {
-                    FileInfo fileInfo = new FileInfo(_path);
-                    richTextBox1.Text += "Processing card number: " + fileInfo.Name.Replace(".jpg", "") + "... ";
-                    ImageData imageData = ImageDataFactory.Create(_path);
-                    int width = (int)CentimeterToPixel(5.9, imageData.GetDpiX());
-                    int height = (int)CentimeterToPixel(8.6, imageData.GetDpiY());
-                    System.Drawing.Image image = System.Drawing.Image.FromFile(_path);
-                    System.Drawing.Image resizedImage = ResizeImage(image, width, height);
-
-                    string tempPath = Path.GetTempPath() + fileInfo.Name;
-                    resizedImage.Save(tempPath, ImageFormat.Jpeg);
-                    //using (System.Drawing.Image bmpInput = System.Drawing.Image.FromFile(tempPath))
-                    //{
-                    //    using (Bitmap bmpOutput = new Bitmap(bmpInput))
-                    //    {
-                    //        ImageCodecInfo encoder = GetEncoder(ImageFormat.Png);
-                    //        Encoder myEncoder = Encoder.Quality;
-
-                    //        var myEncoderParameters = new EncoderParameters(1);
-                    //        var myEncoderParameter = new EncoderParameter(myEncoder, 100L);
-                    //        myEncoderParameters.Param[0] = myEncoderParameter;
-
-                    //        bmpOutput.SetResolution(207.0f, 207.0f); // Change to any dpi
-                    //        bmpOutput.Save(tempPath, encoder, myEncoderParameters);
-                    //    }
-                    //}
-                    iText.Layout.Element.Cell cell = CreateImageCell(tempPath);
-                    cell.SetMargins(0, 0, 0, 0);
-                    cell.SetPaddings(0, 0, 0, 0);
-                    table.AddCell(cell);
-                }
-                catch (Exception ex)
-                {
-                    richTextBox1.Text += ex.Message + "\n";
+                    File.Delete(dest);
                 }
             }
-
-            doc.Add(table);
-
-            doc.Close();
         }
-        private void convertWordToPdf(string sourcedocx, string targetpdf)
+        private bool convertWordToPdf(string sourcedocx, string targetpdf)
         {
+            bool successed = false;
             richTextBox1.Text += "Converting to print file(.pdf): " + "... ";
             Microsoft.Office.Interop.Word.Application appWord = new Microsoft.Office.Interop.Word.Application();
             var wordDocument = appWord.Documents.Open(sourcedocx);
             try
             {
                 wordDocument.ExportAsFixedFormat(targetpdf, WdExportFormat.wdExportFormatPDF);
+                successed = true;
                 richTextBox1.Text += "Success!" + "\n";
                 richTextBox1.Text += "Generated print file(.pdf): " + targetpdf + "\n";
             }
             catch (Exception ex)
             {
+                successed = false;
                 richTextBox1.Text += ex.InnerException.Message + "\n";
             }
             finally
@@ -185,6 +132,7 @@ namespace YGOPro_PrintCardHelper
                 wordDocument.Close();
                 appWord.Quit();
             }
+            return successed;
         }
         private ImageCodecInfo GetEncoder(ImageFormat format)
         {
@@ -239,44 +187,6 @@ namespace YGOPro_PrintCardHelper
             double pixel = Centimeter * dpi / 2.54d;
             return (float)pixel;
         }
-        private static iText.Layout.Element.Cell CreateImageCell(string path)
-        {
-            ImageData imageData = ImageDataFactory.Create(path);
-            iText.Layout.Element.Image img = new iText.Layout.Element.Image(imageData);
-            img.SetWidth(imageData.GetWidth());
-            iText.Layout.Element.Cell cell = new iText.Layout.Element.Cell().Add(img);
-            cell.SetBorder(iText.Layout.Borders.Border.NO_BORDER);
-            return cell;
-        }
-        private class OverlappingImageTableRenderer : TableRenderer
-        {
-            private ImageData image;
-
-            public OverlappingImageTableRenderer(iText.Layout.Element.Table modelElement, ImageData img)
-                : base(modelElement)
-            {
-                image = img;
-            }
-
-            public override void DrawChildren(DrawContext drawContext)
-            {
-
-                // Use the coordinates of the cell in the fourth row and the second column to draw the image
-                iText.Kernel.Geom.Rectangle rect = rows[0][0].GetOccupiedAreaBBox();
-                base.DrawChildren(drawContext);
-
-                drawContext.GetCanvas().AddImage(image, rect.GetLeft(), rect.GetTop() - image.GetHeight(), false);
-            }
-
-            // If renderer overflows on the next area, iText uses getNextRender() method to create a renderer for the overflow part.
-            // If getNextRenderer isn't overriden, the default method will be used and thus a default rather than custom
-            // renderer will be created
-            public override IRenderer GetNextRenderer()
-            {
-                return new OverlappingImageTableRenderer((iText.Layout.Element.Table)modelElement, image);
-            }
-        }
-
         private void frmHelper_Load(object sender, EventArgs e)
         {
             richTextBox1.Text += "Drap .ydk file(s) here to generate .docx file(s)" + "\n";
