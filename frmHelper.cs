@@ -5,6 +5,7 @@ using iText.Layout.Borders;
 using iText.Layout.Element;
 using iText.Layout.Properties;
 using iText.Layout.Renderer;
+using Microsoft.Office.Interop.Word;
 using System;
 using System.Collections;
 using System.Drawing;
@@ -63,16 +64,17 @@ namespace YGOPro_PrintCardHelper
                     file = new FileInfo(outputPath);
                     file.Directory.Create();
                     ManipulateWord(file.FullName, (string[])picPaths.ToArray(typeof(string)));
-                    richTextBox1.Text += "Generated print file: " + outputPath + "\n";
                 }
                 catch (Exception ex)
                 {
                     richTextBox1.Text += ex.Message + "\n";
                 }
             }
+            richTextBox1.Text += "All done!" + "\n";
         }
         private void ManipulateWord(string dest, string[] paths)
         {
+            richTextBox1.Text += "Generating to print file(.doc): " + dest + "... " + "\n";
             var doc = DocX.Create(dest);
             doc.MarginLeft = 47;
             doc.MarginRight = 47;
@@ -107,6 +109,8 @@ namespace YGOPro_PrintCardHelper
                 }
             }
             doc.Save();
+            richTextBox1.Text += "Generated print file(.doc): " + dest + "\n";
+            convertWordToPdf(dest, dest.Replace(".doc", ".pdf"));
         }
         private void ManipulatePdf(string dest, string[] paths)
         {
@@ -161,6 +165,27 @@ namespace YGOPro_PrintCardHelper
 
             doc.Close();
         }
+        private void convertWordToPdf(string sourcedocx, string targetpdf)
+        {
+            richTextBox1.Text += "Converting to print file(.pdf): " + "... ";
+            Microsoft.Office.Interop.Word.Application appWord = new Microsoft.Office.Interop.Word.Application();
+            var wordDocument = appWord.Documents.Open(sourcedocx);
+            try
+            {
+                wordDocument.ExportAsFixedFormat(targetpdf, WdExportFormat.wdExportFormatPDF);
+                richTextBox1.Text += "Success!" + "\n";
+                richTextBox1.Text += "Generated print file(.pdf): " + targetpdf + "\n";
+            }
+            catch (Exception ex)
+            {
+                richTextBox1.Text += ex.InnerException.Message + "\n";
+            }
+            finally
+            {
+                wordDocument.Close();
+                appWord.Quit();
+            }
+        }
         private ImageCodecInfo GetEncoder(ImageFormat format)
         {
             ImageCodecInfo[] codecs = ImageCodecInfo.GetImageDecoders();
@@ -182,7 +207,7 @@ namespace YGOPro_PrintCardHelper
         /// <returns>The resized image.</returns>
         public static Bitmap ResizeImage(System.Drawing.Image image, int width, int height)
         {
-            var destRect = new Rectangle(0, 0, width, height);
+            var destRect = new System.Drawing.Rectangle(0, 0, width, height);
             var destImage = new Bitmap(width, height);
 
             destImage.SetResolution(image.HorizontalResolution, image.VerticalResolution);
